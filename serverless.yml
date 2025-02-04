@@ -1,0 +1,44 @@
+service: converter-api
+frameworkVersion: '4'
+
+provider:
+  name: aws
+  runtime: nodejs22.x
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+  memorySize: 128
+  timeout: 10
+  environment:
+    NODE_OPTIONS: --enable-source-maps
+  logs:
+    restApi: true
+  httpApi:
+    cors: true
+
+functions:
+  xmlToJson:
+    handler: src/xmlToJson.handler
+    memorySize: 128
+    timeout: 5
+    events:
+      - httpApi:
+          path: /convert/xml-to-json
+          method: POST
+
+  jsonToXml:
+    handler: src/jsonToXml.handler
+    memorySize: 128
+    timeout: 5
+    events:
+      - httpApi:
+          path: /convert/json-to-xml
+          method: POST
+
+plugins:
+  - serverless-offline
+
+custom:
+  serverless-offline:
+    httpPort: 4000
+    lambdaPort: 4002
+    noPrependStageInUrl: true

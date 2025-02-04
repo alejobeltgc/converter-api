@@ -1,0 +1,38 @@
+# Dependencias
+node_modules/
+.serverless/
+.serverless-offline/
+
+# Entorno y configuraciones
+.env
+.env.*
+.aws/
+.awsrc
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp*
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Builds y compilación
+dist/
+coverage/
+*.tsbuildinfo
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Serverless Framework
+.serverless_plugins/
+
+# Testing
+output.json
+*.junit.xml
+
+# TypeScript (opcional)
+*.js.map
+*.d.ts
