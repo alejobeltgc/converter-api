@@ -32,7 +32,6 @@ export const handler: APIGatewayProxyHandler = async (event) => {
             };
         }
 
-        // Validar JSON antes de procesarlo
         let parsedBody: JsonData;
         try {
             parsedBody = JSON.parse(event.body);
@@ -52,11 +51,9 @@ export const handler: APIGatewayProxyHandler = async (event) => {
             };
         }
 
-        // Construcción del XML
         const xml = xmlBuilder.build(parsedBody);
         const fullXml = `<?xml version="1.0" encoding="UTF-8"?>\n${xml}`;
 
-        // Validación del XML generado
         const validationResult = XMLValidator.validate(fullXml);
         if (validationResult !== true) {
             return {

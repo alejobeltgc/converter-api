@@ -53,15 +53,12 @@ describe('JSON to XML Lambda Handler with Sinon', () => {
             },
         };
 
-        // Simulamos el comportamiento de XMLBuilder.build
         buildStub = sinon.stub(XMLBuilder.prototype, 'build').returns('<person><name>John</name><age>30</age></person>');
-
-        // Simulamos la validación del XML
         validateStub = sinon.stub(XMLValidator, 'validate').returns(true);
     });
 
     afterEach(() => {
-        sinon.restore(); // Restablecemos todos los mocks
+        sinon.restore();
     });
 
     it('should return valid XML when given a valid JSON', async () => {
@@ -71,13 +68,12 @@ describe('JSON to XML Lambda Handler with Sinon', () => {
         expect(result.headers?.['Content-Type']).toBe('application/xml');
         expect(result.body).toBe('<?xml version="1.0" encoding="UTF-8"?>\n<person><name>John</name><age>30</age></person>');
 
-        // Verificamos que build y validate fueron llamados
         sinon.assert.calledWith(buildStub, { person: { name: 'John', age: 30 } });
         sinon.assert.calledWith(validateStub, '<?xml version="1.0" encoding="UTF-8"?>\n<person><name>John</name><age>30</age></person>');
     });
 
     it('should return 400 for invalid JSON', async () => {
-        event.body = '{ person: { name: John, age: 30 } }'; // JSON inválido (falta comillas)
+        event.body = '{ person: { name: John, age: 30 } }';
 
         const result = (await handler(event, {} as any, () => null)) as APIGatewayProxyResult;
 
@@ -88,7 +84,6 @@ describe('JSON to XML Lambda Handler with Sinon', () => {
     });
 
     it('should return 500 for invalid XML', async () => {
-        // Simulamos que la validación del XML falla
         validateStub.returns('Invalid XML');
 
         const result = (await handler(event, {} as any, () => null)) as APIGatewayProxyResult;
@@ -110,7 +105,7 @@ describe('JSON to XML Lambda Handler with Sinon', () => {
     });
 
     it('should throw an error for invalid JSON structure', async () => {
-        event.body = JSON.stringify([{ name: 'John' }]); // Un array, estructura inválida
+        event.body = JSON.stringify([{ name: 'John' }]);
 
         const result = (await handler(event, {} as any, () => null)) as APIGatewayProxyResult;
 
@@ -121,7 +116,6 @@ describe('JSON to XML Lambda Handler with Sinon', () => {
     });
 
     it('should handle unexpected errors gracefully', async () => {
-        // Simulamos un error inesperado en el builder
         buildStub.throws(new Error('Unexpected build error'));
 
         const result = (await handler(event, {} as any, () => null)) as APIGatewayProxyResult;

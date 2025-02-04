@@ -11,7 +11,6 @@ export const handler: APIGatewayProxyHandler = async (
             ? Buffer.from(event.body, 'base64').toString('utf-8')
             : event.body || '';
 
-        // Manejar cuerpo vacío explícitamente
         if (!xmlData.trim()) {
             return {
                 statusCode: 400,
@@ -23,7 +22,6 @@ export const handler: APIGatewayProxyHandler = async (
             };
         }
 
-        // Validar XML antes de procesarlo
         const validationResult = XMLValidator.validate(xmlData);
         if (validationResult !== true) {
             return {
@@ -36,7 +34,6 @@ export const handler: APIGatewayProxyHandler = async (
             };
         }
 
-        // Configuración del parser
         const parser = new XMLParser({
             ignoreAttributes: false,
             attributeNamePrefix: '@_',

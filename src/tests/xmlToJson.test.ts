@@ -53,10 +53,7 @@ describe('XML to JSON Lambda Handler with Sinon', () => {
             },
         };
 
-        // Creamos un stub para XMLValidator.validate
         validateStub = sinon.stub(XMLValidator, 'validate').returns(true);
-
-        // Creamos un stub para XMLParser.parse
         parseStub = sinon.stub(XMLParser.prototype, 'parse').returns({ person: { name: 'John', age: '30' } });
     });
 
@@ -82,19 +79,18 @@ describe('XML to JSON Lambda Handler with Sinon', () => {
         event.isBase64Encoded = true;
         event.body = base64EncodedBody;
 
-        // Configura los stubs para este caso específico
-        validateStub.returns(true); // La validación del XML siempre pasa
+        validateStub.returns(true);
         parseStub.withArgs(xmlContent).returns({ person: { name: 'Jane', age: 25 } });
 
         const result = (await handler(event, {} as any, () => {})) as APIGatewayProxyResult;
 
         expect(result.statusCode).toBe(200);
         const body = JSON.parse(result.body);
-        expect(body.person.name).toBe('Jane'); // Ahora debe pasar correctamente
+        expect(body.person.name).toBe('Jane');
         expect(body.person.age).toBe(25);
 
-        sinon.assert.calledWith(validateStub, xmlContent); // Valida el cuerpo decodificado
-        sinon.assert.calledWith(parseStub, xmlContent); // Valida que el parser fue llamado con el contenido decodificado
+        sinon.assert.calledWith(validateStub, xmlContent);
+        sinon.assert.calledWith(parseStub, xmlContent);
     });
 
     it('should handle base64-encoded XML body', async () => {
@@ -102,8 +98,7 @@ describe('XML to JSON Lambda Handler with Sinon', () => {
         event.isBase64Encoded = true;
         event.body = Buffer.from(xmlContent, 'utf-8').toString('base64');
 
-        // Configuramos el comportamiento específico para este test en el parser
-        validateStub.returns(true); // La validación siempre pasa
+        validateStub.returns(true);
         parseStub.withArgs(xmlContent).returns({ person: { name: 'Jane', age: 25 } });
 
         const result = (await handler(event, {} as any, () => {})) as APIGatewayProxyResult;
@@ -128,7 +123,6 @@ describe('XML to JSON Lambda Handler with Sinon', () => {
         expect(body.error).toBe('Invalid XML format');
         expect(body.details).toBe('Empty XML body');
 
-        // No deberíamos llamar a validateStub ni a parseStub
         sinon.assert.notCalled(validateStub);
         sinon.assert.notCalled(parseStub);
     });
