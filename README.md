@@ -1,86 +1,87 @@
 ```javascript
-// Interceptar el submit del formulario
+// Interceptar el click del dav-button
 (function() {
-    // Buscar el formulario
-    const form = document.querySelector('form[action*="contactform"]') || 
-                 document.querySelector('form[name*="contact"]') ||
-                 document.querySelector('form');
+    const form = document.querySelector('.dav-form-layout');
+    const button = form.querySelector('dav-button');
     
-    if (!form) {
-        console.error('❌ No se encontró el formulario');
-        return;
-    }
+    // Crear un botón de debug
+    const debugBtn = document.createElement('button');
+    debugBtn.textContent = '🔍 DEBUG: Ver datos sin enviar';
+    debugBtn.style.cssText = 'background: #ff5722; color: white; padding: 10px 20px; margin: 10px; cursor: pointer; border: none; border-radius: 5px;';
+    button.parentElement.appendChild(debugBtn);
     
-    console.log('✅ Formulario encontrado:', form);
-    
-    // Guardar el handler original si existe
-    const originalSubmit = form.onsubmit;
-    
-    // Interceptar el submit
-    form.addEventListener('submit', function(e) {
-        e.preventDefault(); // DETENER el envío
+    debugBtn.addEventListener('click', (e) => {
+        e.preventDefault();
         e.stopPropagation();
         
-        console.log('🛑 FORMULARIO INTERCEPTADO - Analizando datos...\n');
+        const fields = [
+            { selector: 'dav-textfield[label="Nombre"]', name: "nombre" },
+            { selector: 'dav-dropdown[label="Tipo de identificación"]', name: "tipoIdentificacion" },
+            { selector: 'dav-textfield[label="Número de documento"]', name: "numeroDocumento" },
+            { selector: 'dav-textfield[label="Teléfono/Celular"]', name: "telefono" },
+            { selector: 'dav-textfield[label="Correo electrónico"]', name: "correo" },
+            { selector: 'dav-dropdown[label="Asunto"]', name: "asunto" },
+            { selector: "dav-textarea[label]", name: "detalle" },
+            { selector: "dav-checkbox", name: "autorizacion" }
+        ];
         
-        // Mostrar todos los inputs hidden que se crearían
-        console.log('=== INPUTS HIDDEN ACTUALES ===');
-        const hiddenInputs = form.querySelectorAll('input[type="hidden"]');
-        hiddenInputs.forEach(input => {
-            console.log(`  ${input.name}: "${input.value}"`);
-        });
+        console.clear();
+        console.log('🔍 ANÁLISIS DE DATOS DEL FORMULARIO\n');
+        console.log('='.repeat(60));
         
-        // Mostrar datos del FormData
-        console.log('\n=== FORMDATA QUE SE ENVIARÍA ===');
-        const formData = new FormData(form);
-        for (let [key, value] of formData.entries()) {
-            const tipo = typeof value;
-            const vacio = (value === '' || value === null || value === undefined);
-            console.log(`  ${key}: "${value}" (tipo: ${tipo}, vacío: ${vacio})`);
-        }
+        let allValid = true;
         
-        // Analizar WebComponents
-        console.log('\n=== WEBCOMPONENTS ===');
-        const webComponents = form.querySelectorAll('dav-textfield, dav-dropdown, dav-checkbox, dav-textarea');
-        webComponents.forEach(wc => {
-            const name = wc.getAttribute('name') || wc.getAttribute('id') || 'sin-nombre';
-            const value = wc.value;
-            const checked = wc.checked;
-            console.log(`  <${wc.tagName.toLowerCase()}> name="${name}"`);
-            console.log(`    .value = "${value}" (tipo: ${typeof value})`);
-            if (wc.tagName.toLowerCase() === 'dav-checkbox') {
-                console.log(`    .checked = ${checked} (tipo: ${typeof checked})`);
+        fields.forEach(f => {
+            const el = form.querySelector(f.selector);
+            if (!el) {
+                console.log(`❌ ${f.name}: ELEMENTO NO ENCONTRADO`);
+                allValid = false;
+                return;
             }
+            
+            let rawValue;
+            let stringValue;
+            
+            if (el.tagName === "DAV-CHECKBOX") {
+                rawValue = el.checked;
+                stringValue = String(el.checked);
+            } else {
+                rawValue = el.value;
+                stringValue = String(el.value || '');
+            }
+            
+            // Simular validación del backend
+            let isValid = true;
+            let reason = '';
+            
+            if (f.name === 'correo') {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                isValid = stringValue && emailRegex.test(stringValue);
+                reason = isValid ? 'email válido' : 'FALLA isValidEmail()';
+            } else if (f.name === 'autorizacion') {
+                isValid = stringValue.toLowerCase() === 'true' || stringValue.toLowerCase() === 'on';
+                reason = isValid ? 'autorización válida' : 'FALLA isValidAuthorization() - necesita "true" o "on"';
+            } else {
+                isValid = stringValue && stringValue.trim() !== '';
+                reason = isValid ? 'OK' : 'FALLA isNotBlank()';
+            }
+            
+            if (!isValid) allValid = false;
+            
+            const icon = isValid ? '✅' : '❌';
+            console.log(`${icon} ${f.name}:`);
+            console.log(`   Raw value: ${JSON.stringify(rawValue)} (${typeof rawValue})`);
+            console.log(`   String value: "${stringValue}"`);
+            console.log(`   Validación: ${reason}`);
+            console.log('');
         });
         
-        // Validación simulada del backend
-        console.log('\n=== SIMULACIÓN VALIDACIÓN BACKEND ===');
-        const campos = ['nombre', 'tipoIdentificacion', 'numeroDocumento', 'telefono', 'correo', 'asunto', 'detalle', 'autorizacion'];
-        campos.forEach(campo => {
-            const valor = formData.get(campo);
-            const esValido = valor && valor.toString().trim() !== '';
-            const icon = esValido ? '✅' : '❌';
-            console.log(`  ${icon} ${campo}: "${valor}" - ${esValido ? 'VÁLIDO' : 'FALLA isNotBlank()'}`);
-        });
-        
-        // Validación especial de email
-        const correo = formData.get('correo');
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        const emailValido = correo && emailRegex.test(correo);
-        console.log(`\n  📧 Correo "${correo}" - formato ${emailValido ? '✅ válido' : '❌ inválido'}`);
-        
-        // Validación especial de autorización
-        const auth = formData.get('autorizacion');
-        const authValida = auth && (auth.toLowerCase() === 'true' || auth.toLowerCase() === 'on');
-        console.log(`  ☑️ Autorización "${auth}" - ${authValida ? '✅ válido' : '❌ FALLA (debe ser "true" o "on")'}`);
-        
-        console.log('\n🔴 ENVÍO BLOQUEADO - Revisa los datos arriba');
-        console.log('💡 Para enviar de verdad, recarga la página y envía sin este script');
+        console.log('='.repeat(60));
+        console.log(allValid ? '✅ TODOS LOS CAMPOS PASARÍAN LA VALIDACIÓN' : '❌ HAY CAMPOS QUE FALLARÍAN LA VALIDACIÓN');
         
         return false;
-    }, true); // true = capture phase
+    });
     
-    console.log('🎯 Script instalado. Ahora llena el formulario y presiona Enviar.');
-    console.log('   El envío será bloqueado y verás los datos en consola.');
+    console.log('✅ Botón de DEBUG agregado. Llena el formulario y presiona el botón naranja "DEBUG"');
 })();
 ```
